@@ -1,0 +1,46 @@
+services:
+  db:
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_TCP_PORT: ${MYSQL_TCP_PORT}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: [
+        "CMD",
+        "mysqladmin",
+        "ping",
+        "-h", "localhost",
+        "-P", "${MYSQL_TCP_PORT}",
+        "-u", "${MYSQL_USER}",
+        "-p${MYSQL_PASSWORD}"
+      ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    # command: npm run start
+    ports:
+      - "${PORT}:3000"
+    environment:
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_TCP_PORT: ${MYSQL_TCP_PORT}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      PORT: ${PORT}
+      DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:
