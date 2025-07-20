@@ -22,6 +22,6 @@ export function authMiddleware(
     req.userId = payload.id
     next()
   } catch (err) {
-    return res.status(401).json({ error: "Invalid or expired token" })
+    return res.status(401).json({ error: (err as Error).message })
   }
 }
