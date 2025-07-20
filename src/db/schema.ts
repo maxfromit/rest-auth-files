@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm"
 import { mysqlTable, int, varchar, timestamp } from "drizzle-orm/mysql-core"
 
 export const usersTable = mysqlTable("users", {
@@ -21,8 +22,10 @@ export const filesTable = mysqlTable("files", {
 
 export const tokensTable = mysqlTable("tokens", {
   id: int("id").primaryKey().autoincrement(),
-  user_id: int("user_id").notNull(),
-  refresh_token: varchar("refresh_token", { length: 255 }).notNull(),
+  user_id: varchar("user_id", { length: 255 }).notNull(),
+  refresh_token: varchar("refresh_token", { length: 255 }).notNull().unique(),
   expires_at: timestamp("expires_at").notNull(),
-  revoked: int("revoked").default(0),
+  revoked_at: timestamp("revoked_at")
+    .default(sql`null`)
+    .$type<Date | null>(),
 })
