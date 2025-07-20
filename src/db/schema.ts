@@ -11,8 +11,8 @@ export const usersTable = mysqlTable("users", {
 })
 
 export const filesTable = mysqlTable("files", {
-  id: int("id").primaryKey().autoincrement(),
-  user_id: int("user_id").notNull(),
+  id: varchar("id", { length: 36 }).primaryKey().unique(), // UUID as file ID and filename
+  //   user_id: int("user_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   extension: varchar("extension", { length: 10 }).notNull(),
   mime_type: varchar("mime_type", { length: 100 }).notNull(),
