@@ -22,18 +22,14 @@ function handleAuthResponse(
       }
 
       const result = await serviceFn(id, password)
-      if (result.error) {
-        return res
-          .status(successStatus === 200 ? 401 : 400)
-          .json({ error: result.error })
-      }
+
       return res.status(successStatus).json({
         message: successMessage,
         accessToken: result.accessToken,
         refreshToken: result.refreshToken,
       })
-    } catch (error) {
-      return res.status(500).json({ error: "Internal server error" })
+    } catch (err) {
+      return res.status(500).json({ error: (err as Error).message })
     }
   }
 }
@@ -57,15 +53,13 @@ async function refreshAccessTokenController(req: Request, res: Response) {
       return res.status(400).json({ error: "Missing refresh token" })
     }
     const result = await refreshAccessTokenService(refreshToken)
-    if (result.error) {
-      return res.status(401).json({ error: result.error })
-    }
+
     return res.status(200).json({
       message: "Access token refreshed",
       accessToken: result.accessToken,
     })
-  } catch (error) {
-    return res.status(500).json({ error: "Internal server error" })
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message })
   }
 }
 
@@ -76,18 +70,16 @@ async function logoutController(req: Request, res: Response) {
     return res.status(400).json({ error: "Missing refresh token" })
   }
 
-  console.log("refreshToken", refreshToken)
   if (!req.userId) {
     return res.status(401).json({ error: "Unauthorized" })
   }
+
   try {
-    const result = await logoutService(refreshToken, req.userId)
-    if (result.error) {
-      return res.status(400).json({ error: result.error })
-    }
+    await logoutService(refreshToken, req.userId)
+
     return res.status(200).json({ message: "Logged out successfully" })
   } catch (err) {
-    return res.status(500).json({ error: "Logout failed" })
+    return res.status(500).json({ error: (err as Error).message })
   }
 }
 
