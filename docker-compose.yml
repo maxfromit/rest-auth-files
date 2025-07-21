@@ -23,18 +23,12 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    ports:  
-      - "3306:3306" #for development
+  
 
   app:
-    # build: .
-    image: node:22-alpine #for development
-    working_dir: /app #for development
-    command: npx tsx watch src/server.ts #for development
+    build: .
     volumes: 
-      - .:/app # for development
-      - ./uploads:/app/uploads # for development
-      # - uploads:/app/uploads
+      - uploads:/app/uploads
     ports:
       - "${PORT}:3000"
     
@@ -43,8 +37,7 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_TCP_PORT: ${MYSQL_TCP_PORT}
-      MYSQL_HOST: db # for development
-      # MYSQL_HOST: ${MYSQL_HOST} # for production
+      MYSQL_HOST: ${MYSQL_HOST} 
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       PORT: ${PORT}
