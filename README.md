@@ -106,7 +106,6 @@ GET http://localhost:3000/file/list?page=2&list_size=5
   ```bash
   docker-compose down -v
   ```
-- For development, you can uncomment the bind mounts in `docker-compose.yml` to sync code and uploads with your local machine.
 
 ---
 
