@@ -24,6 +24,7 @@ export const tokensTable = mysqlTable("tokens", {
   id: int("id").primaryKey().autoincrement(),
   user_id: varchar("user_id", { length: 255 }).notNull(),
   refresh_token: varchar("refresh_token", { length: 255 }).notNull().unique(),
+  session_id: varchar("session_id", { length: 36 }).notNull(),
   expires_at: timestamp("expires_at").notNull(),
   revoked_at: timestamp("revoked_at")
     .default(sql`null`)
