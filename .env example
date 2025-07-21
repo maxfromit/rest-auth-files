@@ -1,0 +1,15 @@
+MYSQL_ROOT_PASSWORD=rootpassword
+MYSQL_DATABASE=rest_auth_files
+MYSQL_USER=restuser
+MYSQL_PASSWORD=restpassword
+MYSQL_TCP_PORT=3306
+MYSQL_HOST=db
+
+JWT_SECRET=your_jwt_secret
+JWT_REFRESH_SECRET=your_refresh_secret
+
+PORT=3000
+
+DATABASE_URL=mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@${MYSQL_HOST}:${MYSQL_TCP_PORT}/${MYSQL_DATABASE}
+
+UPLOAD_DIR=/app/uploads
