@@ -43,13 +43,10 @@ async function signinService(id: string, password: string) {
     .limit(1)
   const user = users[0]
 
-  if (!user) {
-    throw new Error("Invalid user id")
-  }
+  if (!user) throw new Error("Invalid user id")
+
   const valid = await bcrypt.compare(password, user.password_hash)
-  if (!valid) {
-    throw new Error("Invalid password")
-  }
+  if (!valid) throw new Error("Invalid password")
 
   const sessionId = randomUUID()
   const accessToken = generateAccessToken(id, sessionId)
@@ -66,9 +63,7 @@ async function signupService(id: string, password: string) {
     .select()
     .from(usersTable)
     .where(eq(usersTable.id, id))
-  if (existing.length > 0) {
-    throw new Error("User already exists")
-  }
+  if (existing.length > 0) throw new Error("User already exists")
 
   const password_hash = await bcrypt.hash(password, 12)
   const sessionId = randomUUID()
@@ -91,13 +86,11 @@ async function refreshAccessTokenService(refreshToken: string) {
     .where(eq(tokensTable.refresh_token, refreshToken))
   const tokenRow = tokens[0]
 
-  if (!tokenRow || tokenRow.revoked_at) {
+  if (!tokenRow || tokenRow.revoked_at)
     throw new Error("Invalid or revoked refresh token")
-  }
 
-  if (tokenRow.expires_at < new Date()) {
-    throw new Error("Refresh token expired")
-  }
+  if (tokenRow.expires_at < new Date()) throw new Error("Refresh token expired")
+
   jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!)
 
   const accessToken = generateAccessToken(tokenRow.user_id, tokenRow.session_id)
@@ -117,9 +110,8 @@ async function logoutService(userId: string, sessionId: string) {
 
   const resultHeader = Array.isArray(result) ? result[0] : result
 
-  if (!resultHeader || resultHeader.affectedRows === 0) {
+  if (!resultHeader || resultHeader.affectedRows === 0)
     throw new Error("Session not found or already revoked")
-  }
 }
 
 export {
