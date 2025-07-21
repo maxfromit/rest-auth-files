@@ -64,19 +64,11 @@ async function refreshAccessTokenController(req: Request, res: Response) {
 }
 
 async function logoutController(req: Request, res: Response) {
-  console.log("req.body", req.body)
-  const { refreshToken } = req.body
-  if (!refreshToken) {
-    return res.status(400).json({ error: "Missing refresh token" })
-  }
-
-  if (!req.userId) {
+  if (!req.userId || !req.sessionId) {
     return res.status(401).json({ error: "Unauthorized" })
   }
-
   try {
-    await logoutService(refreshToken, req.userId)
-
+    await logoutService(req.userId, req.sessionId)
     return res.status(200).json({ message: "Logged out successfully" })
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message })
