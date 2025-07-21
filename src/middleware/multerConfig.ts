@@ -15,7 +15,7 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     try {
       const id = req.params?.id || randomUUID() // preserve id for file updates
-      const extension = extname(file.originalname).toLowerCase()
+      const extension = extname(file.originalname)
       cb(null, `${id}${extension}`)
     } catch (err) {
       cb(err as Error, "")
