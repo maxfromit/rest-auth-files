@@ -89,15 +89,13 @@ GET http://localhost:3000/file/list?page=2&list_size=5
 
 ## 📝 Notes
 
-- In the assignment, `/logout` was specified as `[GET]`. This implementation uses `POST` for security and best practices.
-- Both JWT and refresh token are returned on **both** registration and login. If you want to change this, adjust the controller logic.
-- The `id` field is used for both phone and email for simplicity, as per the assignment. In a real-world app, these would be separate fields.
+- The `id` field is used for both phone and email for simplicity. In a real-world app, these would be separate fields.
 
 ---
 
 ## 🗄️ File Storage
 
-- Uploaded files are stored in a Docker-managed volume (`uploads`), not on your local PC.
+- Uploaded files are stored in a Docker-managed volume (`uploads`).
 - The upload directory inside the container is `/app/uploads`.
 
 ---
