@@ -45,9 +45,9 @@ async function getFileListService(page: number, listSize: number) {
 }
 
 async function deleteFileService(id: string) {
-  const file = await getFileDetailsService(id)
-  if (!file) throw new Error("File not found")
-  const filePath = getFilePath(id, file.extension)
+  const { filePath } = await getFileDetailsWithPathService(id)
+
+  if (!filePath) throw new Error("File not found")
 
   await unlink(filePath)
 
@@ -55,9 +55,7 @@ async function deleteFileService(id: string) {
 
   const deleteHeader = Array.isArray(result) ? result[0] : result
 
-  if (deleteHeader.affectedRows === 0) {
-    throw new Error("file may not exist")
-  }
+  if (deleteHeader.affectedRows === 0) throw new Error("file may not exist")
 }
 
 export {
