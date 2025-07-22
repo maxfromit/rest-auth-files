@@ -57,6 +57,7 @@ async function refreshAccessTokenController(req: Request, res: Response) {
     return res.status(200).json({
       message: "Access token refreshed",
       accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
     })
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message })
