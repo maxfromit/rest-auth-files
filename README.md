@@ -74,21 +74,23 @@ GET http://localhost:3000/file/list?page=2&list_size=5
 
 ## 🔒 Token & Session Logic
 
-- **JWT (access token):** Short-lived, stateless, used for authentication.
-- **Refresh token:** Long-lived, stored in DB with a unique `session_id` per device/session.
-- **Multi-device:** Each login gets a new `session_id` and refresh token. Logging out on one device does **not** affect others.
-- **Refresh token rotation:** On every /signin/new_token request, a new refresh token and access token are issued.
-  The old refresh token is revoked in the database.
-  The client must always replace its stored refresh token with the new one from the response.
-  This allows users to stay logged in indefinitely, as long as they keep refreshing before expiry.
-  If a refresh token is stolen and used, the legitimate user's token will be revoked, improving security.
+- **JWT (access token):** Short-lived, stateless, used for authentication. Returned in the response body.
+- **Refresh token:** Long-lived, stored in the DB with a unique `session_id` per device/session, and sent to the client as an **HTTP-only, Secure, SameSite=Strict cookie**. This cookie is never accessible to JavaScript and is only sent by the browser to the `/signin/new_token` endpoint.
+- **Multi-device:** Each login gets a new `session_id` and refresh token cookie. Logging out on one device does **not** affect others.
+- **Refresh token rotation:** On every `/signin/new_token` request, a new refresh token and access token are issued. The old refresh token is revoked in the database. The client must always use the new refresh token cookie for future refreshes. This allows users to stay logged in indefinitely, as long as they keep refreshing before expiry. If a refresh token is stolen and used, the legitimate user's token will be revoked, improving security.
 - **Logout:**
   - `POST /logout` revokes the refresh token for the current session (`session_id` from JWT).
   - After logout, both the refresh token and access token for that session are blocked.
   - Access token is checked on every request; if its session is revoked, access is denied.
 - **Token revocation:**
-  - On logout, the DB field `revoked_at` is set for the session.
+  - On logout or refresh, the DB field `revoked_at` is set for the session.
   - Middleware checks `session_id` on every request for instant revocation.
+
+**Security Note:**
+
+- The refresh token is never exposed to frontend JavaScript, protecting it from XSS attacks.
+- The refresh token cookie is only sent to the `/signin/new_token` endpoint, reducing its exposure and risk.
+- The access token is short-lived and only stored in memory, minimizing risk if compromised.
 
 ---
 
