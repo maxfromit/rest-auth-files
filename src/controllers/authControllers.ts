@@ -2,7 +2,7 @@ import type { Request, Response } from "express"
 import {
   signupService,
   signinService,
-  refreshAccessTokenService,
+  rotateTokensService,
   logoutService,
 } from "../services/authServices.js"
 
@@ -52,7 +52,7 @@ async function refreshAccessTokenController(req: Request, res: Response) {
     if (!refreshToken) {
       return res.status(400).json({ error: "Missing refresh token" })
     }
-    const result = await refreshAccessTokenService(refreshToken)
+    const result = await rotateTokensService(refreshToken)
 
     return res.status(200).json({
       message: "Access token refreshed",
