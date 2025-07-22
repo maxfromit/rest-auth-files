@@ -1,4 +1,4 @@
-import { db } from "../src/db/index.js"
+import { db } from "../index.js"
 
 async function destroyTables() {
   await db.execute("DROP TABLE IF EXISTS tokens")

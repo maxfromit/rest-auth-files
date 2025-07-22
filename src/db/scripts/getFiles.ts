@@ -1,5 +1,5 @@
-import { db } from "../src/db/index.js"
-import { filesTable } from "../src/db/schema.js"
+import { db } from "../index.js"
+import { filesTable } from "../schema.js"
 import { desc } from "drizzle-orm"
 
 async function getFiles() {

@@ -1,5 +1,5 @@
-import { db } from "../src/db/index.js"
-import { usersTable, tokensTable } from "../src/db/schema.js"
+import { db } from "../index.js"
+import { usersTable, tokensTable } from "../schema.js"
 import { eq } from "drizzle-orm"
 
 async function getUsers() {

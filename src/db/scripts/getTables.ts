@@ -1,5 +1,4 @@
-import { db } from "../src/db/index.js"
-import "dotenv/config"
+import { db } from "../index.js"
 
 async function listTables() {
   const [rows] = await db.execute("SHOW TABLES")
