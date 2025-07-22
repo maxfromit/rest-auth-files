@@ -40,12 +40,12 @@ A robust REST API for authentication and file management with JWT, refresh token
 
 ### Auth
 
-| Method | Route               | Description                            |
-| ------ | ------------------- | -------------------------------------- |
-| POST   | `/signup`           | Register new user (id = phone/email)   |
-| POST   | `/signin`           | Login, returns JWT and refresh token   |
-| POST   | `/signin/new_token` | Get new access token via refresh token |
-| POST   | `/logout`           | Logout (revoke current session)        |
+| Method | Route               | Description                                                      |
+| ------ | ------------------- | ---------------------------------------------------------------- |
+| POST   | `/signup`           | Register new user (id = phone/email)                             |
+| POST   | `/signin`           | Login, returns JWT and refresh token                             |
+| POST   | `/signin/new_token` | Get new access token and rotated refresh token via refresh token |
+| POST   | `/logout`           | Logout (revoke current session)                                  |
 
 ### File
 
@@ -77,6 +77,11 @@ GET http://localhost:3000/file/list?page=2&list_size=5
 - **JWT (access token):** Short-lived, stateless, used for authentication.
 - **Refresh token:** Long-lived, stored in DB with a unique `session_id` per device/session.
 - **Multi-device:** Each login gets a new `session_id` and refresh token. Logging out on one device does **not** affect others.
+- **Refresh token rotation:** On every /signin/new_token request, a new refresh token and access token are issued.
+  The old refresh token is revoked in the database.
+  The client must always replace its stored refresh token with the new one from the response.
+  This allows users to stay logged in indefinitely, as long as they keep refreshing before expiry.
+  If a refresh token is stolen and used, the legitimate user's token will be revoked, improving security.
 - **Logout:**
   - `POST /logout` revokes the refresh token for the current session (`session_id` from JWT).
   - After logout, both the refresh token and access token for that session are blocked.
