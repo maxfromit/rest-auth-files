@@ -4,9 +4,10 @@ import { randomUUID } from "crypto"
 import { db } from "../db/index.js"
 import { usersTable, tokensTable } from "../db/schema.js"
 import { eq, and } from "drizzle-orm"
-
-const ACCESS_TOKEN_EXPIRE_MINUTES = 10
-const REFRESH_TOKEN_EXPIRE_DAYS = 7
+import {
+  ACCESS_TOKEN_EXPIRE_MINUTES,
+  REFRESH_TOKEN_EXPIRE_DAYS,
+} from "../consts.js"
 
 function generateAccessToken(id: string, sessionId: string) {
   return jwt.sign({ id, sessionId }, process.env.JWT_SECRET!, {
