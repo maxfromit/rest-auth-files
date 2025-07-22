@@ -34,6 +34,35 @@ function buildRefreshTokenRow(
     ),
   }
 }
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0]
+type Db = typeof db
+
+type RevokeSessionTokenArgs =
+  | {
+      userId: string
+      refreshToken: string
+      sessionId?: never
+      dbOrTx: Transaction | Db
+    }
+  | {
+      userId: string
+      sessionId: string
+      refreshToken?: never
+      dbOrTx: Transaction | Db
+    }
+
+async function revokeSessionToken(args: RevokeSessionTokenArgs) {
+  const { userId, sessionId, refreshToken, dbOrTx } = args
+  function getTokenWhereClause() {
+    if (sessionId) return eq(tokensTable.session_id, sessionId)
+    if (refreshToken) return eq(tokensTable.refresh_token, refreshToken)
+    throw new Error("Either sessionId or refreshToken must be provided")
+  }
+  return dbOrTx
+    .update(tokensTable)
+    .set({ revoked_at: new Date() })
+    .where(and(eq(tokensTable.user_id, userId), getTokenWhereClause()))
+}
 
 async function signinService(id: string, password: string) {
   const users = await db
@@ -79,7 +108,7 @@ async function signupService(id: string, password: string) {
   return { accessToken, refreshToken }
 }
 
-async function refreshAccessTokenService(refreshToken: string) {
+async function rotateTokensService(refreshToken: string) {
   const tokens = await db
     .select()
     .from(tokensTable)
@@ -93,30 +122,34 @@ async function refreshAccessTokenService(refreshToken: string) {
 
   jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!)
 
-  const accessToken = generateAccessToken(tokenRow.user_id, tokenRow.session_id)
-  return { accessToken }
+  const newSessionId = randomUUID()
+  const newAccessToken = generateAccessToken(tokenRow.user_id, newSessionId)
+  const newRefreshToken = generateRefreshToken(tokenRow.user_id, newSessionId)
+
+  await db.transaction(async (tx) => {
+    // Revoke old session token
+    await revokeSessionToken({
+      userId: tokenRow.user_id,
+      refreshToken: tokenRow.refresh_token,
+      dbOrTx: tx,
+    })
+
+    // Store new refresh token
+    await tx
+      .insert(tokensTable)
+      .values(
+        buildRefreshTokenRow(tokenRow.user_id, newRefreshToken, newSessionId)
+      )
+  })
+
+  return { accessToken: newAccessToken, refreshToken: newRefreshToken }
 }
 
 async function logoutService(userId: string, sessionId: string) {
-  const result = await db
-    .update(tokensTable)
-    .set({ revoked_at: new Date() })
-    .where(
-      and(
-        eq(tokensTable.user_id, userId),
-        eq(tokensTable.session_id, sessionId)
-      )
-    )
-
+  const result = await revokeSessionToken({ userId, sessionId, dbOrTx: db })
   const resultHeader = Array.isArray(result) ? result[0] : result
-
   if (!resultHeader || resultHeader.affectedRows === 0)
     throw new Error("Session not found or already revoked")
 }
 
-export {
-  signupService,
-  signinService,
-  refreshAccessTokenService,
-  logoutService,
-}
+export { signupService, signinService, rotateTokensService, logoutService }
