@@ -5,6 +5,7 @@ import {
   rotateTokensService,
   logoutService,
 } from "../services/authServices.js"
+import { setRefreshTokenCookie } from "../utils/setRefreshTokenCookie.js"
 
 function handleAuthResponse(
   serviceFn: (
@@ -21,12 +22,16 @@ function handleAuthResponse(
         return res.status(400).json({ error: "Missing id or password" })
       }
 
-      const result = await serviceFn(id, password)
+      const { accessToken, refreshToken } = await serviceFn(id, password)
+
+      // Set refresh token as HTTP-only cookie
+      if (refreshToken) {
+        setRefreshTokenCookie(res, refreshToken)
+      }
 
       return res.status(successStatus).json({
         message: successMessage,
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
+        accessToken: accessToken,
       })
     } catch (err) {
       return res.status(500).json({ error: (err as Error).message })
@@ -48,16 +53,19 @@ const signinController = handleAuthResponse(
 
 async function refreshAccessTokenController(req: Request, res: Response) {
   try {
-    const { refreshToken } = req.body
+    // Use refresh token from HTTP-only cookie
+    const refreshToken = req.cookies.refreshToken
     if (!refreshToken) {
       return res.status(400).json({ error: "Missing refresh token" })
     }
-    const result = await rotateTokensService(refreshToken)
+    const { accessToken, refreshToken: newRefreshToken } =
+      await rotateTokensService(refreshToken)
+
+    setRefreshTokenCookie(res, newRefreshToken)
 
     return res.status(200).json({
       message: "Access token refreshed",
-      accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
+      accessToken,
     })
   } catch (err) {
     return res.status(500).json({ error: (err as Error).message })
