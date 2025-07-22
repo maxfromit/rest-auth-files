@@ -1,0 +1,6 @@
+export const ACCESS_TOKEN_EXPIRE_MINUTES = 10
+export const REFRESH_TOKEN_EXPIRE_DAYS = 7
+export const REFRESH_TOKEN_MAX_AGE =
+  REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60 * 1000
+
+export const REFRESH_TOKEN_COOKIE_PATH = "/signin/new_token"
