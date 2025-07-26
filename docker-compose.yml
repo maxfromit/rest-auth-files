@@ -15,7 +15,7 @@ services:
         "CMD",
         "mysqladmin",
         "ping",
-        "-h", "localhost",
+        "-h", "${MYSQL_HOST}",
         "-P", "${MYSQL_TCP_PORT}",
         "-u", "${MYSQL_USER}",
         "-p${MYSQL_PASSWORD}"
