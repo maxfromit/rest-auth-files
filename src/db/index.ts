@@ -1,7 +1,11 @@
 import { drizzle } from "drizzle-orm/mysql2"
 import mysql from "mysql2/promise"
+import dotenv from "dotenv"
+import dotenvExpand from "dotenv-expand"
 
-console.log("Initializing database connection...")
+const env = dotenv.config()
+dotenvExpand.expand(env)
+
 const poolConnection = mysql.createPool({
   host: process.env.MYSQL_HOST,
   user: process.env.MYSQL_USER,

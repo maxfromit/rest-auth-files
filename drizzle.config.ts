@@ -5,7 +5,7 @@ import { defineConfig } from "drizzle-kit"
 const env = dotenv.config()
 dotenvExpand.expand(env)
 
-console.log("Generating Drizzle configuration...", process.env.DATABASE_URL)
+console.log("Generating Drizzle configuration...")
 
 export default defineConfig({
   out: "./drizzle",
