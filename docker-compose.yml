@@ -23,26 +23,16 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+ 
   
 
   app:
     build: .
     volumes: 
-      - uploads:/app/uploads
+      - uploads:${UPLOAD_DIR}
     ports:
       - "${PORT}:3000"
     
-    environment:
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_TCP_PORT: ${MYSQL_TCP_PORT}
-      MYSQL_HOST: ${MYSQL_HOST} 
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
-      PORT: ${PORT}
-      DATABASE_URL: ${DATABASE_URL}
-      UPLOAD_DIR: ${UPLOAD_DIR}
     depends_on:
       db:
         condition: service_healthy
