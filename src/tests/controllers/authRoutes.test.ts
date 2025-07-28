@@ -39,12 +39,8 @@ describe("Auth routes", () => {
     await deleteAllUsers()
   })
   describe("Signup", () => {
-    test("should return 400 for missing signup data", async () => {
+    test("should fail when signup data is missing", async () => {
       const res = await request(app).post("/signup").send({})
-      console.log(
-        "should return 400 for missing signup data res.status",
-        res.status
-      )
       expect(res.status).toBe(400)
       expect(res.body).toHaveProperty("error")
       expect(res.body.error).toContain("Missing")
@@ -52,16 +48,14 @@ describe("Auth routes", () => {
 
     test("should signup a new user", async () => {
       const res = await request(app).post("/signup").send(testUserForSignup)
-
       expect(res.status).toBe(201)
       expect(res.body).toHaveProperty("accessToken")
       expect(res.body).toHaveProperty("message", "User registered successfully")
       expect(res.headers["set-cookie"]).toBeDefined()
     })
 
-    test("should not signup an existing user", async () => {
+    test("should not allow signup with an existing user id", async () => {
       const res = await request(app).post("/signup").send(testUserForSignup)
-
       expect(res.status).toBe(500)
       expect(res.body).toHaveProperty("error")
       expect(res.body.error).toContain("already")
@@ -69,7 +63,7 @@ describe("Auth routes", () => {
   })
 
   describe("Signin", () => {
-    test("should return 400 for missing signin data", async () => {
+    test("should fail when signin data is missing", async () => {
       const res = await request(app).post("/signin").send({})
       expect(res.status).toBe(400)
       expect(res.body).toHaveProperty("error")
@@ -89,23 +83,23 @@ describe("Auth routes", () => {
       const res = await request(app)
         .post("/signin")
         .send({ ...testUserForSignin, password: "wrong" })
-      expect(res.status).toBe(500) //
+      expect(res.status).toBe(500)
       expect(res.body).toHaveProperty("error")
       expect(res.body.error).toContain("Invalid password")
     })
 
-    test("should not signin with wrong user id", async () => {
+    test("should not signin with non-existent user id", async () => {
       const res = await request(app)
         .post("/signin")
         .send({ ...testUserForSignin, id: "wrong" })
-      expect(res.status).toBe(500) //
+      expect(res.status).toBe(500)
       expect(res.body).toHaveProperty("error")
       expect(res.body.error).toContain("Invalid user")
     })
   })
 
   describe("Logout", () => {
-    test("should return 401 if not authorized on logout", async () => {
+    test("should fail logout if not authorized", async () => {
       const res = await request(app).post("/logout").send()
       expect(res.status).toBe(401)
       expect(res.body).toHaveProperty("error")
@@ -118,7 +112,6 @@ describe("Auth routes", () => {
         .post("/signin")
         .send(testUserForLogout)
       const accessToken = signinRes.body.accessToken
-      console.log("accessToken", accessToken)
 
       const res = await request(app)
         .post("/logout")
@@ -129,7 +122,7 @@ describe("Auth routes", () => {
       expect(res.body).toHaveProperty("message", "Logged out successfully")
     })
 
-    test("should return 401 if session not found or already revoked", async () => {
+    test("should not logout twice with the same token", async () => {
       const signinRes = await request(app)
         .post("/signin")
         .send(testUserForLogout)
@@ -138,14 +131,12 @@ describe("Auth routes", () => {
       await request(app)
         .post("/logout")
         .set("Authorization", `Bearer ${accessToken}`)
-        .send() // Logout to revoke the session
+        .send()
 
       const res = await request(app)
         .post("/logout")
         .set("Authorization", `Bearer ${accessToken}`)
         .send()
-
-      console.log("res.status", res.status)
 
       expect(res.status).toBe(401)
       expect(res.body).toHaveProperty("error")
@@ -155,7 +146,6 @@ describe("Auth routes", () => {
 
   describe("Revocation - new_token", () => {
     test("should refresh access token with valid refresh token", async () => {
-      // First, sign in to get the refresh token cookie
       await request(app).post("/signup").send(testUserForRevocation)
       const signinRes = await request(app)
         .post("/signin")
@@ -176,13 +166,13 @@ describe("Auth routes", () => {
       expect(refreshRes.headers["set-cookie"]).toBeDefined()
     })
 
-    test("should return 400 for missing refresh token", async () => {
+    test("should fail to refresh token if refresh token is missing", async () => {
       const res = await request(app).post("/signin/new_token").send()
       expect(res.status).toBe(400)
       expect(res.body).toHaveProperty("error")
     })
 
-    test("should return 500 for invalid refresh token", async () => {
+    test("should fail to refresh token if refresh token is invalid", async () => {
       await request(app).post("/signin").send(testUserForRevocation)
 
       const invalidCookie = [
@@ -198,7 +188,7 @@ describe("Auth routes", () => {
       expect(refreshRes.body.error).toContain("nvalid")
     })
 
-    test("should return 500 for malformed refresh token", async () => {
+    test("should fail to refresh token if refresh token is malformed", async () => {
       await request(app).post("/signin").send(testUserForRevocation)
       const malformedCookie = [
         "refreshToken=malformed; Max-Age=604800; Path=/signin/new_token; Expires=Mon, 04 Aug 2025 19:22:48 GMT; HttpOnly; Secure; SameSite=Strict",
@@ -214,7 +204,7 @@ describe("Auth routes", () => {
       expect(refreshRes.body.error).toContain("malformed")
     })
 
-    test("should return 500 for revoked with logout refresh token", async () => {
+    test("should not refresh token if it was revoked by logout", async () => {
       const signinRes = await request(app)
         .post("/signin")
         .send(testUserForRevocation)
@@ -224,7 +214,7 @@ describe("Auth routes", () => {
       await request(app)
         .post("/logout")
         .set("Authorization", `Bearer ${accessToken}`)
-        .send() // Logout to revoke the session
+        .send()
 
       const res = await request(app)
         .post("/signin/new_token")
