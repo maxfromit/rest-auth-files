@@ -110,6 +110,8 @@ async function signupService(id: string, password: string) {
 }
 
 async function rotateTokensService(refreshToken: string) {
+  jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!)
+
   const tokens = await db
     .select()
     .from(tokensTable)
@@ -120,8 +122,6 @@ async function rotateTokensService(refreshToken: string) {
     throw new Error("Invalid or revoked refresh token")
 
   if (tokenRow.expires_at < new Date()) throw new Error("Refresh token expired")
-
-  jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!)
 
   const newSessionId = randomUUID()
   const newAccessToken = generateAccessToken(tokenRow.user_id, newSessionId)
