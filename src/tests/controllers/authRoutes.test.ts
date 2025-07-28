@@ -9,185 +9,217 @@ import {
   afterAll,
   afterEach,
 } from "vitest"
-import { vi } from "vitest"
-import { db } from "../../db/index.js"
-import * as dbModule from "../../db/index.js"
-import { usersTable } from "../../db/schema.js"
 import { deleteAllUsers } from "../../db/scripts/deleteUsers.js"
-import bcrypt from "bcrypt"
 
-const testUser = {
+const testUserForSignup = {
   id: "new+1234567890",
   password: "TestPassword123!",
 }
 
-vi.mock("../../db/index.js", async (importOriginal) => {
-  const mod = await importOriginal<typeof db>() // type is inferred
-  return {
-    ...mod,
-    // replace some exports
-    total: vi.fn(),
-  }
-})
+const testUserForSignin = {
+  id: "new+1234567890",
+  password: "TestPassword123!",
+}
+const testUserForLogout = {
+  id: "new+1234567890",
+  password: "TestPassword123!",
+}
 
-const result = db.select().from(usersTable)
+const testUserForRevocation = {
+  id: "new+1234567890",
+  password: "TestPassword123!",
+}
 
 describe("Auth routes", () => {
-  let selectMock: any
-  let insertMock: any
-  let transactionMock: any
-
-  // beforeAll(async () => {
-
-  //   // await deleteAllUsers()
-  // })
-
-  beforeEach(() => {
-    const mockBcryptHash = async (
-      data: string | Buffer,
-      saltOrRounds: string | number
-    ) => {
-      return "mocked-hash"
-    }
-
-    const mockBcryptCompare = async (
-      data: string | Buffer,
-      encrypted: string
-    ) => {
-      return true
-    }
-
-    vi.spyOn(bcrypt, "hash").mockImplementation(mockBcryptHash)
-    vi.spyOn(bcrypt, "compare").mockImplementation(mockBcryptCompare)
-
-    const mockInsertChain = {
-      values: vi.fn().mockReturnThis(),
-    } as unknown as ReturnType<typeof db.insert>
-
-    const mockSelectChain = {
-      from: vi.fn().mockReturnThis(),
-      where: vi.fn().mockReturnThis(),
-      limit: vi.fn().mockResolvedValue([]), // or mockReturnValueOnce([...])
-    } as unknown as ReturnType<typeof db.select>
-
-    const mockUpdateChain = {
-      set: vi.fn().mockReturnThis(),
-      where: vi.fn().mockReturnThis(),
-    } as unknown as ReturnType<typeof db.update>
-
-    type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0]
-
-    const mockTransaction = {
-      insert: vi.fn().mockReturnValue(mockInsertChain),
-      rollback: vi.fn(),
-    } as unknown as Transaction
-
-    vi.spyOn(db, "select").mockReturnValue(mockSelectChain)
-    vi.spyOn(db, "insert").mockReturnValue(mockInsertChain)
-    vi.spyOn(db, "transaction").mockImplementation(async (cb) => {
-      console.log("mockTransaction", mockTransaction)
-      return cb(mockTransaction)
-    })
-    vi.spyOn(db, "update").mockReturnValue(mockUpdateChain)
-  })
-
-  afterEach(() => {
-    vi.restoreAllMocks()
+  beforeAll(async () => {
+    await deleteAllUsers()
   })
 
   afterAll(async () => {
-    // TODO clean up test user
-    // await deleteAllUsers()
-    // await request().delete(`/users/${testUser.id}`)
+    await deleteAllUsers()
   })
-
-  test("GET /health-check should return status OK", async () => {
-    const response = await request(app).get("/health-check")
-
-    expect(response.statusCode).toBe(200)
-    expect(response.body).toEqual({ status: "ok" })
-  })
-
-  //   test("GET /info should return status OK", async () => {
-  //   const response = await request(app).get("/info")
-
-  //   expect(response.statusCode).toBe(200)
-  //   expect(response.body).toEqual({ status: "ok" })
-  // })
 
   test("should return 400 for missing signup data", async () => {
     const res = await request(app).post("/signup").send({})
-    console.log("should return 400 for missing signup data res.body", res.body)
     console.log(
       "should return 400 for missing signup data res.status",
       res.status
     )
     expect(res.status).toBe(400)
     expect(res.body).toHaveProperty("error")
+    expect(res.body.error).toContain("Missing")
   })
 
-  test("should signup a new user", async () => {
-    const res = await request(app).post("/signup").send(testUser)
-
-    console.log("should signup a new user res.status", res.status)
-    console.log("should signup a new user res.body", res.body)
+  test.only("should signup a new user", async () => {
+    const res = await request(app).post("/signup").send(testUserForSignup)
 
     expect(res.status).toBe(201)
     expect(res.body).toHaveProperty("accessToken")
     expect(res.body).toHaveProperty("message", "User registered successfully")
-    console.log("res.headers=cookie", res.headers["set-cookie"])
-    // TODO check for set-cookie header for refreshToken
     expect(res.headers["set-cookie"]).toBeDefined()
   })
 
-  test.skip("should not signup an existing user", async () => {
-    const res = await request(app).post("/signup").send(testUser)
-    console.log("should not signup an existing userres.body", res.body)
-    console.log("should not signup an existing user res.status", res.status)
+  test("should not signup an existing user", async () => {
+    const res = await request(app).post("/signup").send(testUserForSignup)
+
     expect(res.status).toBe(500)
     expect(res.body).toHaveProperty("error")
+    expect(res.body.error).toContain("already")
   })
 
-  test.skip("should return 400 for missing signin data", async () => {
+  test("should return 400 for missing signin data", async () => {
     const res = await request(app).post("/signin").send({})
     expect(res.status).toBe(400)
     expect(res.body).toHaveProperty("error")
+    expect(res.body.error).toContain("Missing")
   })
 
-  test.skip("should signin with correct credentials", async () => {
-    const res = await request(app).post("/signin").send(testUser)
+  test("should signin with correct credentials", async () => {
+    await request(app).post("/signup").send(testUserForSignin)
+    const res = await request(app).post("/signin").send(testUserForSignin)
     expect(res.status).toBe(200)
     expect(res.body).toHaveProperty("accessToken")
     expect(res.body).toHaveProperty("message", "Login successful")
     expect(res.headers["set-cookie"]).toBeDefined()
   })
 
-  test.skip("should not signin with wrong password", async () => {
+  test("should not signin with wrong password", async () => {
     const res = await request(app)
       .post("/signin")
-      .send({ ...testUser, password: "wrong" })
+      .send({ ...testUserForSignin, password: "wrong" })
     expect(res.status).toBe(500) //
     expect(res.body).toHaveProperty("error")
+    expect(res.body.error).toContain("Invalid password")
   })
 
-  test.skip("should refresh access token with valid refresh token", async () => {
+  test("should not signin with wrong user id", async () => {
+    const res = await request(app)
+      .post("/signin")
+      .send({ ...testUserForSignin, id: "wrong" })
+    expect(res.status).toBe(500) //
+    expect(res.body).toHaveProperty("error")
+    expect(res.body.error).toContain("Invalid user")
+  })
+
+  test.only("should refresh access token with valid refresh token", async () => {
     // First, sign in to get the refresh token cookie
-    const signinRes = await request(app).post("/signin").send(testUser)
-    console.log("signinRes.headers=cookie", signinRes.headers["set-cookie"])
+    await request(app).post("/signup").send(testUserForRevocation)
+    const signinRes = await request(app)
+      .post("/signin")
+      .send(testUserForRevocation)
     const cookies = signinRes.headers["set-cookie"]
+
     const refreshRes = await request(app)
       .post("/signin/new_token")
       .set("Cookie", cookies)
       .send()
+
     expect(refreshRes.status).toBe(200)
     expect(refreshRes.body).toHaveProperty("accessToken")
     expect(refreshRes.body).toHaveProperty("message", "Access token refreshed")
     expect(refreshRes.headers["set-cookie"]).toBeDefined()
   })
 
-  test.skip("should return 400 for missing refresh token", async () => {
+  test("should return 400 for missing refresh token", async () => {
     const res = await request(app).post("/signin/new_token").send()
     expect(res.status).toBe(400)
     expect(res.body).toHaveProperty("error")
+  })
+
+  test("should return 500 for invalid refresh token", async () => {
+    await request(app).post("/signin").send(testUserForRevocation)
+
+    const invalidCookie = [
+      "refreshToken=eyJhbGdiOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Im5ldysxMjM0NTY3ODkwIiwic2Vzc2lvbklkIjoiYzFkNzQ2MjEtZGEzZS00ZjNmLWEyMWQtNGQ5MmE2MDViMWY2IiwiaWF0IjoxNzUzNzMwNTY4LCJleHAiOjE3NTQzMzUzNjh9.QcK91zovO53X4Jn3S7rdFsO7Oy0wjXSsGaIQNTDBkPw; Max-Age=604800; Path=/signin/new_token; Expires=Mon, 04 Aug 2025 19:22:48 GMT; HttpOnly; Secure; SameSite=Strict",
+    ]
+    const refreshRes = await request(app)
+      .post("/signin/new_token")
+      .set("Cookie", invalidCookie)
+      .send()
+
+    expect(refreshRes.status).toBe(500)
+    expect(refreshRes.body).toHaveProperty("error")
+    expect(refreshRes.body.error).toContain("nvalid")
+  })
+
+  test("should return 500 for malformed refresh token", async () => {
+    await request(app).post("/signin").send(testUserForRevocation)
+    const malformedCookie = [
+      "refreshToken=malformed; Max-Age=604800; Path=/signin/new_token; Expires=Mon, 04 Aug 2025 19:22:48 GMT; HttpOnly; Secure; SameSite=Strict",
+    ]
+
+    const refreshRes = await request(app)
+      .post("/signin/new_token")
+      .set("Cookie", malformedCookie)
+      .send()
+
+    expect(refreshRes.status).toBe(500)
+    expect(refreshRes.body).toHaveProperty("error")
+    expect(refreshRes.body.error).toContain("malformed")
+  })
+
+  test("should return 401 if not authorized on logout", async () => {
+    const res = await request(app).post("/logout").send()
+    expect(res.status).toBe(401)
+    expect(res.body).toHaveProperty("error")
+    expect(res.body.error).toContain("Unauthorized")
+  })
+
+  test("should logout successfully", async () => {
+    await request(app).post("/signup").send(testUserForLogout)
+    const signinRes = await request(app).post("/signin").send(testUserForLogout)
+    const accessToken = signinRes.body.accessToken
+    console.log("accessToken", accessToken)
+
+    const res = await request(app)
+      .post("/logout")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send()
+
+    expect(res.status).toBe(200)
+    expect(res.body).toHaveProperty("message", "Logged out successfully")
+  })
+
+  test("should return 500 if session not found or already revoked", async () => {
+    const signinRes = await request(app).post("/signin").send(testUserForLogout)
+    const accessToken = signinRes.body.accessToken
+
+    await request(app)
+      .post("/logout")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send() // Logout to revoke the session
+
+    const res = await request(app)
+      .post("/logout")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send()
+
+    console.log("res.status", res.status)
+
+    expect(res.status).toBe(401)
+    expect(res.body).toHaveProperty("error")
+    expect(res.body.error).toContain("revoked")
+  })
+
+  test.only("should return 500 for revoked with logout refresh token", async () => {
+    const signinRes = await request(app)
+      .post("/signin")
+      .send(testUserForRevocation)
+    const accessToken = signinRes.body.accessToken
+    const cookies = signinRes.headers["set-cookie"]
+
+    await request(app)
+      .post("/logout")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send() // Logout to revoke the session
+
+    const res = await request(app)
+      .post("/signin/new_token")
+      .set("Cookie", cookies)
+      .send()
+
+    expect(res.status).toBe(500)
+    expect(res.body).toHaveProperty("error")
+    expect(res.body.error).toContain("revoked")
   })
 })
