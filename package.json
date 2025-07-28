@@ -3,10 +3,14 @@
   "version": "1.0.0",
   "description": "RESTful backend service built with Node.js and Express, featuring JWT-based authentication, MySQL integration, and secure file management with upload, download, and metadata handling",
   "type": "module",
+  "engines": {
+    "node": ">=21"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
     "test": "vitest",
+    "test:indocker": "docker-compose exec app npm test",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
