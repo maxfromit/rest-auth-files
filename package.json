@@ -9,12 +9,12 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "vitest",
-    "test:indocker": "docker-compose exec app npm test",
+    "dev": "npx tsx watch src/server.ts",
+    "dev:in-docker": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up",
+    "test:in-docker": "docker-compose exec app npx vitest",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push",
-    "dev": "npx tsx watch src/server.ts"
+    "db:push": "drizzle-kit push --verbose"
   },
   "author": "Maxim Polyakov",
   "license": "MIT",
