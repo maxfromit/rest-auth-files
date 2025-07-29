@@ -12,22 +12,22 @@ import {
 import { deleteAllUsers } from "../../db/scripts/deleteUsers.js"
 
 const testUserForSignup = {
-  id: "new+1234567890",
-  password: "TestPassword123!",
+  id: "signup@mail.test",
+  password: "TestPassword1!",
 }
 
 const testUserForSignin = {
-  id: "new+1234567890",
-  password: "TestPassword123!",
+  id: "signin@mail.test",
+  password: "TestPassword2!",
 }
 const testUserForLogout = {
-  id: "new+1234567890",
-  password: "TestPassword123!",
+  id: "logout@mail.test",
+  password: "TestPassword3!",
 }
 
 const testUserForRevocation = {
-  id: "new+1234567890",
-  password: "TestPassword123!",
+  id: "revocation@mail.test",
+  password: "TestPassword4!",
 }
 
 describe("Auth routes", () => {
@@ -36,7 +36,7 @@ describe("Auth routes", () => {
   })
 
   afterAll(async () => {
-    await deleteAllUsers()
+    // await deleteAllUsers()
   })
   describe("Signup", () => {
     test("should fail when signup data is missing", async () => {
