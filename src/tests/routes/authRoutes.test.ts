@@ -10,22 +10,24 @@ import {
   afterEach,
 } from "vitest"
 import { deleteAllUsers } from "../../db/scripts/deleteUsers.js"
+import { signup, signin } from "../utils.js"
+import type { User } from "../types.js"
 
-const testUserForSignup = {
+const testUserForSignup: User = {
   id: "signup@mail.test",
   password: "TestPassword1!",
 }
 
-const testUserForSignin = {
+const testUserForSignin: User = {
   id: "signin@mail.test",
   password: "TestPassword2!",
 }
-const testUserForLogout = {
+const testUserForLogout: User = {
   id: "logout@mail.test",
   password: "TestPassword3!",
 }
 
-const testUserForRevocation = {
+const testUserForRevocation: User = {
   id: "revocation@mail.test",
   password: "TestPassword4!",
 }
@@ -47,7 +49,7 @@ describe("Auth routes", () => {
     })
 
     test("should signup a new user", async () => {
-      const res = await request(app).post("/signup").send(testUserForSignup)
+      const res = await signup(testUserForSignup)
       expect(res.status).toBe(201)
       expect(res.body).toHaveProperty("accessToken")
       expect(res.body).toHaveProperty("message", "User registered successfully")
@@ -55,7 +57,7 @@ describe("Auth routes", () => {
     })
 
     test("should not allow signup with an existing user id", async () => {
-      const res = await request(app).post("/signup").send(testUserForSignup)
+      const res = await signup(testUserForSignup)
       expect(res.status).toBe(500)
       expect(res.body).toHaveProperty("error")
       expect(res.body.error).toContain("already")
@@ -71,8 +73,8 @@ describe("Auth routes", () => {
     })
 
     test("should signin with correct credentials", async () => {
-      await request(app).post("/signup").send(testUserForSignin)
-      const res = await request(app).post("/signin").send(testUserForSignin)
+      await signup(testUserForSignin)
+      const res = await signin(testUserForSignin)
       expect(res.status).toBe(200)
       expect(res.body).toHaveProperty("accessToken")
       expect(res.body).toHaveProperty("message", "Login successful")
@@ -107,10 +109,8 @@ describe("Auth routes", () => {
     })
 
     test("should logout successfully", async () => {
-      await request(app).post("/signup").send(testUserForLogout)
-      const signinRes = await request(app)
-        .post("/signin")
-        .send(testUserForLogout)
+      await signup(testUserForLogout)
+      const signinRes = await signin(testUserForLogout)
       const accessToken = signinRes.body.accessToken
 
       const res = await request(app)
@@ -123,9 +123,7 @@ describe("Auth routes", () => {
     })
 
     test("should not logout twice with the same token", async () => {
-      const signinRes = await request(app)
-        .post("/signin")
-        .send(testUserForLogout)
+      const signinRes = await signin(testUserForLogout)
       const accessToken = signinRes.body.accessToken
 
       await request(app)
@@ -146,10 +144,8 @@ describe("Auth routes", () => {
 
   describe("Revocation - new_token", () => {
     test("should refresh access token with valid refresh token", async () => {
-      await request(app).post("/signup").send(testUserForRevocation)
-      const signinRes = await request(app)
-        .post("/signin")
-        .send(testUserForRevocation)
+      await signup(testUserForRevocation)
+      const signinRes = await signin(testUserForRevocation)
       const cookies = signinRes.headers["set-cookie"]
 
       const refreshRes = await request(app)
@@ -173,7 +169,7 @@ describe("Auth routes", () => {
     })
 
     test("should fail to refresh token if refresh token is invalid", async () => {
-      await request(app).post("/signin").send(testUserForRevocation)
+      await signin(testUserForRevocation)
 
       const invalidCookie = [
         "refreshToken=eyJhbGdiOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Im5ldysxMjM0NTY3ODkwIiwic2Vzc2lvbklkIjoiYzFkNzQ2MjEtZGEzZS00ZjNmLWEyMWQtNGQ5MmE2MDViMWY2IiwiaWF0IjoxNzUzNzMwNTY4LCJleHAiOjE3NTQzMzUzNjh9.QcK91zovO53X4Jn3S7rdFsO7Oy0wjXSsGaIQNTDBkPw; Max-Age=604800; Path=/signin/new_token; Expires=Mon, 04 Aug 2025 19:22:48 GMT; HttpOnly; Secure; SameSite=Strict",
@@ -189,7 +185,7 @@ describe("Auth routes", () => {
     })
 
     test("should fail to refresh token if refresh token is malformed", async () => {
-      await request(app).post("/signin").send(testUserForRevocation)
+      await signin(testUserForRevocation)
       const malformedCookie = [
         "refreshToken=malformed; Max-Age=604800; Path=/signin/new_token; Expires=Mon, 04 Aug 2025 19:22:48 GMT; HttpOnly; Secure; SameSite=Strict",
       ]
@@ -205,9 +201,7 @@ describe("Auth routes", () => {
     })
 
     test("should not refresh token if it was revoked by logout", async () => {
-      const signinRes = await request(app)
-        .post("/signin")
-        .send(testUserForRevocation)
+      const signinRes = await signin(testUserForRevocation)
       const accessToken = signinRes.body.accessToken
       const cookies = signinRes.headers["set-cookie"]
 
