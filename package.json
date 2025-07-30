@@ -12,6 +12,7 @@
     "dev": "npx tsx watch src/server.ts",
     "dev:in-docker": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up",
     "test:in-docker": "docker-compose exec app npx vitest",
+    "coverage:in-docker": "docker-compose exec app npx vitest run --coverage",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push --verbose"
@@ -38,6 +39,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
     "@types/supertest": "^6.0.3",
+    "@vitest/coverage-istanbul": "^3.2.4",
     "drizzle-kit": "^0.31.4",
     "supertest": "^7.1.4",
     "ts-node-dev": "^2.0.0",
