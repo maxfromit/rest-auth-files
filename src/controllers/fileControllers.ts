@@ -9,7 +9,6 @@ import {
 import { fileMessages, asError, asMessage } from "../consts/messages.js"
 
 async function upsertFileController(req: Request, res: Response) {
-  // Debugging line
   const file = req.file
   if (!file) {
     return res.status(400).json(asError(fileMessages.error.noFileUploaded))
