@@ -38,6 +38,7 @@ async function upsertFileRecordService(file: Express.Multer.File) {
   await db.insert(filesTable).values(fileData).onDuplicateKeyUpdate({
     set: fileData,
   })
+  return fileData
 }
 
 async function getFileListService(page: number, listSize: number) {
@@ -55,7 +56,6 @@ async function deleteFileService(id: string) {
   const result = await db.delete(filesTable).where(eq(filesTable.id, id))
 
   const deleteHeader = Array.isArray(result) ? result[0] : result
-
   if (deleteHeader.affectedRows === 0)
     throw new Error(fileMessages.error.fileMayNotExist)
 }
