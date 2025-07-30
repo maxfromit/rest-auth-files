@@ -1,5 +1,8 @@
 import type { Response } from "express"
-import { REFRESH_TOKEN_COOKIE_PATH, REFRESH_TOKEN_MAX_AGE } from "../consts.js"
+import {
+  REFRESH_TOKEN_COOKIE_PATH,
+  REFRESH_TOKEN_MAX_AGE,
+} from "../consts/tokenConfig.js"
 
 export function setRefreshTokenCookie(res: Response, refreshToken: string) {
   res.cookie("refreshToken", refreshToken, {
