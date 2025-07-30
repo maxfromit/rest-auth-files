@@ -9,18 +9,21 @@ import {
 import { fileMessages, asError, asMessage } from "../consts/messages.js"
 
 async function upsertFileController(req: Request, res: Response) {
+  // Debugging line
   const file = req.file
   if (!file) {
     return res.status(400).json(asError(fileMessages.error.noFileUploaded))
   }
   try {
     const message = req.params.id
-      ? "File updated successfully"
-      : "File uploaded successfully"
+      ? fileMessages.success.fileUpdated
+      : fileMessages.success.fileUploaded
 
-    await upsertFileRecordService(file)
+    const fileData = await upsertFileRecordService(file)
 
-    return res.status(201).json(asMessage(message))
+    // Return id of uploaded file for test cleanup or further actions
+    const id = fileData.id
+    return res.status(201).json({ ...asMessage(message), id })
   } catch (err) {
     return res.status(500).json(asError((err as Error).message))
   }
@@ -77,7 +80,11 @@ async function deleteFileController(req: Request, res: Response) {
     await deleteFileService(id)
     return res.status(200).json(asMessage(fileMessages.success.fileDeleted))
   } catch (err) {
-    return res.status(400).json(asError((err as Error).message))
+    const msg = (err as Error).message
+    if (msg === fileMessages.error.fileNotFound) {
+      return res.status(404).json(asError(msg))
+    }
+    return res.status(400).json(asError(msg))
   }
 }
 
