@@ -1,6 +1,6 @@
 # rest-auth-files
 
-A robust REST API for authentication and file management with JWT, refresh tokens, and multi-device session support. Includes comprehensive integration tests for all API routes and unit tests for utility logic.
+A robust REST API for authentication and file management with JWT, refresh tokens, and multi-device session support. Includes comprehensive integration tests for all API routes.
 
 ## 🛠️ Tech Stack
 
@@ -10,7 +10,7 @@ A robust REST API for authentication and file management with JWT, refresh token
 - **Drizzle ORM** — Type-safe database access
 - **MySQL** — Relational database
 - **Docker** — Containerization and orchestration
-- **Vitest** — Modern unit/integration testing framework
+- **Vitest** — For testing: modern testing framework
 - **Supertest** — HTTP assertions and integration testing for Express
 
 ## 🚀 Quick Start
@@ -127,7 +127,7 @@ return res.status(400).json(asError(fileMessages.error.noFileUploaded))
 
 ## 🧪 Testing
 
-This project is tested as a real-world API with comprehensive integration tests, ensuring all routes and flows are covered as black-box endpoints. Unit tests are also included for utility functions to guarantee correctness in isolation. Mock functions are used to simulate database and file system operations in specific unit and integration tests, allowing for precise control over error and edge cases. This approach provides confidence in both the overall system behavior and the reliability of individual components.
+This project is tested as a real-world API with comprehensive integration tests, ensuring all routes and flows are covered as black-box endpoints. Mock functions are used to simulate database and file system operations in specific integration tests, allowing for precise control over error and edge cases. This approach provides confidence in both the overall system behavior and the reliability of individual components.
 
 When running tests in Docker (using the provided npm scripts), the tests execute against a real MySQL database and real file storage logic for almost all operations, closely simulating production behavior. This ensures that database logic, migrations, and file handling are fully exercised in a real environment, while still allowing for mocking in targeted scenarios.
 
