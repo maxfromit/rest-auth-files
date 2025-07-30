@@ -6,3 +6,8 @@ declare module "express-serve-static-core" {
     sessionId?: string
   }
 }
+
+export interface AuthenticatedRequest extends Request {
+  userId: string
+  sessionId: string
+}
