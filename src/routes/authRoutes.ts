@@ -6,7 +6,7 @@ import {
   logoutController,
 } from "../controllers/authControllers.js"
 import { authMiddleware } from "../middleware/authMiddleware.js"
-import { REFRESH_TOKEN_COOKIE_PATH } from "../consts.js"
+import { REFRESH_TOKEN_COOKIE_PATH } from "../consts/tokenConfig.js"
 
 const router = Router()
 
