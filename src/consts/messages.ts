@@ -29,9 +29,11 @@ const authMessages = {
 const fileMessages = {
   success: {
     fileDeleted: "File deleted successfully",
+    fileUploaded: "File uploaded successfully",
+    fileUpdated: "File updated successfully",
   },
   error: {
-    noFileUploaded: "No file uploaded",
+    noFileUploaded: "No file to upload",
     fileNotFound: "File not found",
     fileMayNotExist: "File may not exist",
   },
