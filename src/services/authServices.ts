@@ -7,7 +7,8 @@ import { eq, and } from "drizzle-orm"
 import {
   ACCESS_TOKEN_EXPIRE_MINUTES,
   REFRESH_TOKEN_EXPIRE_DAYS,
-} from "../consts.js"
+} from "../consts/tokenConfig.js"
+import { authMessages } from "../consts/messages.js"
 
 function generateAccessToken(id: string, sessionId: string) {
   return jwt.sign({ id, sessionId }, process.env.JWT_SECRET!, {
@@ -54,15 +55,21 @@ type RevokeSessionTokenArgs =
 
 async function revokeSessionToken(args: RevokeSessionTokenArgs) {
   const { userId, sessionId, refreshToken, dbOrTx } = args
+
   function getTokenWhereClause() {
     if (sessionId) return eq(tokensTable.session_id, sessionId)
     if (refreshToken) return eq(tokensTable.refresh_token, refreshToken)
-    throw new Error("Either sessionId or refreshToken must be provided")
+    throw new Error(authMessages.error.missingSessionOrRefreshToken)
   }
-  return dbOrTx
+  const result = await dbOrTx
     .update(tokensTable)
     .set({ revoked_at: new Date() })
     .where(and(eq(tokensTable.user_id, userId), getTokenWhereClause()))
+  const resultHeader = Array.isArray(result) ? result[0] : result
+  if (!resultHeader || resultHeader.affectedRows === 0)
+    throw new Error(authMessages.error.sessionNotFoundOrRevoked)
+
+  return resultHeader
 }
 
 async function signinService(id: string, password: string) {
@@ -73,10 +80,10 @@ async function signinService(id: string, password: string) {
     .limit(1)
   const user = users[0]
 
-  if (!user) throw new Error("Invalid user id")
+  if (!user) throw new Error(authMessages.error.invalidUserId)
 
   const valid = await bcrypt.compare(password, user.password_hash)
-  if (!valid) throw new Error("Invalid password")
+  if (!valid) throw new Error(authMessages.error.invalidPassword)
 
   const sessionId = randomUUID()
   const accessToken = generateAccessToken(id, sessionId)
@@ -93,7 +100,7 @@ async function signupService(id: string, password: string) {
     .select()
     .from(usersTable)
     .where(eq(usersTable.id, id))
-  if (existing.length > 0) throw new Error("User already exists")
+  if (existing.length > 0) throw new Error(authMessages.error.userAlreadyExists)
 
   const password_hash = await bcrypt.hash(password, 12)
   const sessionId = randomUUID()
@@ -116,12 +123,14 @@ async function rotateTokensService(refreshToken: string) {
     .select()
     .from(tokensTable)
     .where(eq(tokensTable.refresh_token, refreshToken))
+
   const tokenRow = tokens[0]
 
   if (!tokenRow || tokenRow.revoked_at)
-    throw new Error("Invalid or revoked refresh token")
+    throw new Error(authMessages.error.invalidOrRevokedRefreshToken)
 
-  if (tokenRow.expires_at < new Date()) throw new Error("Refresh token expired")
+  if (tokenRow.expires_at < new Date())
+    throw new Error(authMessages.error.refreshTokenExpired)
 
   const newSessionId = randomUUID()
   const newAccessToken = generateAccessToken(tokenRow.user_id, newSessionId)
@@ -147,10 +156,7 @@ async function rotateTokensService(refreshToken: string) {
 }
 
 async function logoutService(userId: string, sessionId: string) {
-  const result = await revokeSessionToken({ userId, sessionId, dbOrTx: db })
-  const resultHeader = Array.isArray(result) ? result[0] : result
-  if (!resultHeader || resultHeader.affectedRows === 0)
-    throw new Error("Session not found or already revoked")
+  await revokeSessionToken({ userId, sessionId, dbOrTx: db })
 }
 
 export { signupService, signinService, rotateTokensService, logoutService }
