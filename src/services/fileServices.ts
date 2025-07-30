@@ -4,6 +4,7 @@ import { basename, extname } from "path"
 import { sql, eq } from "drizzle-orm"
 import { unlink } from "fs/promises"
 import { getFilePath } from "../utils/getFilePath.js"
+import { fileMessages } from "../consts/messages.js"
 
 async function getFileDetailsService(id: string) {
   const result = await db
@@ -47,7 +48,7 @@ async function getFileListService(page: number, listSize: number) {
 async function deleteFileService(id: string) {
   const { filePath } = await getFileDetailsWithPathService(id)
 
-  if (!filePath) throw new Error("File not found")
+  if (!filePath) throw new Error(fileMessages.error.fileNotFound)
 
   await unlink(filePath)
 
@@ -55,7 +56,8 @@ async function deleteFileService(id: string) {
 
   const deleteHeader = Array.isArray(result) ? result[0] : result
 
-  if (deleteHeader.affectedRows === 0) throw new Error("file may not exist")
+  if (deleteHeader.affectedRows === 0)
+    throw new Error(fileMessages.error.fileMayNotExist)
 }
 
 export {

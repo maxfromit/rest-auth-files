@@ -6,7 +6,8 @@ import {
   logoutService,
 } from "../services/authServices.js"
 import { setRefreshTokenCookie } from "../utils/setRefreshTokenCookie.js"
-
+import { authMessages, asError, asMessage } from "../consts/messages.js"
+import { AuthenticatedRequest } from "../types.js"
 function handleAuthResponse(
   serviceFn: (
     id: string,
@@ -19,7 +20,7 @@ function handleAuthResponse(
     try {
       const { id, password } = req.body
       if (!id || !password) {
-        return res.status(400).json({ error: "Missing id or password" })
+        return res.status(400).json(asError(authMessages.error.missingAuthData))
       }
 
       const { accessToken, refreshToken } = await serviceFn(id, password)
@@ -30,11 +31,11 @@ function handleAuthResponse(
       }
 
       return res.status(successStatus).json({
-        message: successMessage,
+        ...asMessage(successMessage),
         accessToken: accessToken,
       })
     } catch (err) {
-      return res.status(500).json({ error: (err as Error).message })
+      return res.status(500).json(asError((err as Error).message))
     }
   }
 }
@@ -42,21 +43,22 @@ function handleAuthResponse(
 const signupController = handleAuthResponse(
   signupService,
   201,
-  "User registered successfully"
+  authMessages.success.signupSuccessful
 )
 
 const signinController = handleAuthResponse(
   signinService,
   200,
-  "Login successful"
+  authMessages.success.loginSuccessful
 )
 
 async function refreshAccessTokenController(req: Request, res: Response) {
   try {
-    // Use refresh token from HTTP-only cookie
     const refreshToken = req.cookies.refreshToken
     if (!refreshToken) {
-      return res.status(400).json({ error: "Missing refresh token" })
+      return res
+        .status(400)
+        .json(asError(authMessages.error.missingRefreshToken))
     }
     const { accessToken, refreshToken: newRefreshToken } =
       await rotateTokensService(refreshToken)
@@ -64,23 +66,29 @@ async function refreshAccessTokenController(req: Request, res: Response) {
     setRefreshTokenCookie(res, newRefreshToken)
 
     return res.status(200).json({
-      message: "Access token refreshed",
+      ...asMessage(authMessages.success.accessTokenRefreshed),
       accessToken,
     })
   } catch (err) {
-    return res.status(500).json({ error: (err as Error).message })
+    if (
+      (err as Error).message === authMessages.error.refreshTokenExpired ||
+      (err as Error).message === authMessages.error.invalidOrRevokedRefreshToken
+    ) {
+      return res.status(401).json(asError((err as Error).message))
+    }
+    return res.status(500).json(asError((err as Error).message))
   }
 }
 
 async function logoutController(req: Request, res: Response) {
-  if (!req.userId || !req.sessionId) {
-    return res.status(401).json({ error: "Unauthorized" })
-  }
+  const { userId, sessionId } = req as AuthenticatedRequest
   try {
-    await logoutService(req.userId, req.sessionId)
-    return res.status(200).json({ message: "Logged out successfully" })
+    await logoutService(userId, sessionId)
+    return res
+      .status(200)
+      .json(asMessage(authMessages.success.logoutSuccessful))
   } catch (err) {
-    return res.status(500).json({ error: (err as Error).message })
+    return res.status(500).json(asError((err as Error).message))
   }
 }
 

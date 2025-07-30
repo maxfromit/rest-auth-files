@@ -6,11 +6,12 @@ import {
   getFileDetailsWithPathService,
   deleteFileService,
 } from "../services/fileServices.js"
+import { fileMessages, asError, asMessage } from "../consts/messages.js"
 
 async function upsertFileController(req: Request, res: Response) {
   const file = req.file
   if (!file) {
-    return res.status(400).json({ error: "No file uploaded" })
+    return res.status(400).json(asError(fileMessages.error.noFileUploaded))
   }
   try {
     const message = req.params.id
@@ -19,9 +20,9 @@ async function upsertFileController(req: Request, res: Response) {
 
     await upsertFileRecordService(file)
 
-    return res.status(201).json({ message })
+    return res.status(201).json(asMessage(message))
   } catch (err) {
-    return res.status(500).json({ error: (err as Error).message })
+    return res.status(500).json(asError((err as Error).message))
   }
 }
 
@@ -40,7 +41,7 @@ async function getFileListController(req: Request, res: Response) {
     const files = await getFileListService(page, listSize)
     return res.status(200).json({ files })
   } catch (err) {
-    return res.status(500).json({ error: (err as Error).message })
+    return res.status(500).json(asError((err as Error).message))
   }
 }
 
@@ -49,11 +50,11 @@ async function getFileDetailsController(req: Request, res: Response) {
   try {
     const file = await getFileDetailsService(id)
     if (!file) {
-      return res.status(404).json({ error: "File not found" })
+      return res.status(404).json(asError(fileMessages.error.fileNotFound))
     }
     return res.status(200).json({ file })
   } catch (err) {
-    return res.status(500).json({ error: (err as Error).message })
+    return res.status(500).json(asError((err as Error).message))
   }
 }
 
@@ -62,11 +63,11 @@ async function downloadFileController(req: Request, res: Response) {
   try {
     const { file, filePath } = await getFileDetailsWithPathService(id)
     if (!file || !filePath) {
-      return res.status(404).json({ error: "File not found" })
+      return res.status(404).json(asError(fileMessages.error.fileNotFound))
     }
     return res.download(filePath, file.name || id)
   } catch (err) {
-    return res.status(500).json({ error: (err as Error).message })
+    return res.status(500).json(asError((err as Error).message))
   }
 }
 
@@ -74,9 +75,9 @@ async function deleteFileController(req: Request, res: Response) {
   const { id } = req.params
   try {
     await deleteFileService(id)
-    return res.status(200).json({ message: "File deleted successfully" })
+    return res.status(200).json(asMessage(fileMessages.success.fileDeleted))
   } catch (err) {
-    return res.status(400).json({ error: (err as Error).message })
+    return res.status(400).json(asError((err as Error).message))
   }
 }
 
