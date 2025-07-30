@@ -4,6 +4,7 @@ import { describe, expect, test, beforeAll, afterAll } from "vitest"
 import { deleteAllUsers } from "../../db/scripts/deleteUsers.js"
 import { signup, signin } from "../utils.js"
 import type { User } from "../types.js"
+import { authMessages, errorKey } from "../../consts/messages.js"
 
 const testUser: User = {
   id: "info@mail.test",
@@ -12,18 +13,20 @@ const testUser: User = {
 
 describe("Info routes", () => {
   beforeAll(async () => {
-    await deleteAllUsers()
+    // await deleteAllUsers()
   })
 
   afterAll(async () => {
-    await deleteAllUsers()
+    // await deleteAllUsers()
   })
 
   test("should fail to get user info if not authorized", async () => {
     const res = await request(app).get("/info").send()
     expect(res.status).toBe(401)
-    expect(res.body).toHaveProperty("error")
-    expect(res.body.error).toContain("invalid")
+    expect(res.body).toHaveProperty(
+      errorKey,
+      authMessages.error.missingAuthHeader
+    )
   })
 
   test("should return user id if authorized", async () => {
@@ -35,7 +38,6 @@ describe("Info routes", () => {
       .get("/info")
       .set("Authorization", `Bearer ${accessToken}`)
       .send()
-
     expect(res.status).toBe(200)
     expect(res.body).toHaveProperty("id", testUser.id)
   })
