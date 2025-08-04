@@ -60,7 +60,6 @@ describe("File routes", () => {
   })
 
   afterAll(async () => {
-    // Optionally clean up uploaded files if needed
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
     if (fileIds.length > 0) {
